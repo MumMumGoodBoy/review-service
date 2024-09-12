@@ -1,0 +1,54 @@
+syntax = "proto3";
+option go_package = "github.com/MumMumGoodBoy/review-service/proto";
+import "google/protobuf/timestamp.proto";
+
+package proto;
+
+service Review {
+    rpc CreateReview(ReviewRequest) returns (Empty);
+    rpc GetReviewsByRestaurantId(GetReviewsRequest) returns (GetReviewsResponse);
+    rpc GetReview(GetReviewRequest) returns (ReviewResponse);
+    rpc UpdateReview(UpdateReviewRequest) returns (ReviewResponse);
+    rpc DeleteReview(DeleteReviewRequest) returns (Empty);
+}
+
+message Empty {}
+
+message ReviewRequest {
+    string restaurant_id = 1;
+    string user_id = 2;
+    string content = 3;
+    float rating = 4;
+    google.protobuf.Timestamp created_at = 5;
+}
+
+message GetReviewsRequest {
+    string restaurant_id = 1;
+}
+
+message GetReviewRequest {
+    string review_id = 1;
+}
+
+message UpdateReviewRequest {
+    string review_id = 1;
+    string content = 2;
+    float rating = 3;
+}
+
+message DeleteReviewRequest {
+    string review_id = 1;
+}
+
+message ReviewResponse {
+    string review_id = 1;
+    string restaurant_id = 2;
+    string user_id = 3;
+    string content = 4;
+    float rating = 5;
+    google.protobuf.Timestamp created_at = 6;
+}
+
+message GetReviewsResponse {
+    repeated ReviewResponse reviews = 1;
+}
