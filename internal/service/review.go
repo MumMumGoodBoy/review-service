@@ -16,14 +16,14 @@ type ReviewService struct {
 }
 // CreateReview implements proto.ReviewServer.
 func (r *ReviewService) CreateReview(ctx context.Context, review *proto.ReviewRequest) (*proto.Empty, error) {
-	user := model.Review{
+	userReview := model.Review{
 		RestaurantId: review.RestaurantId,
 		UserId:       review.UserId,
 		Rating:       review.Rating,
 		Content:      review.Content,
 	}
 
-	if err := r.DB.Create(&user).Error; err != nil {
+	if err := r.DB.Create(&userReview).Error; err != nil {
 		return nil, err
 	}
 	
