@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/MumMumGoodBoy/review-service/internal/model"
 	"github.com/MumMumGoodBoy/review-service/proto"
@@ -14,6 +15,7 @@ type ReviewService struct {
 	proto.UnimplementedReviewServer
 	DB *gorm.DB
 }
+
 // CreateReview implements proto.ReviewServer.
 func (r *ReviewService) CreateReview(ctx context.Context, review *proto.ReviewRequest) (*proto.Empty, error) {
 	userReview := model.Review{
@@ -26,7 +28,7 @@ func (r *ReviewService) CreateReview(ctx context.Context, review *proto.ReviewRe
 	if err := r.DB.Create(&userReview).Error; err != nil {
 		return nil, err
 	}
-	
+
 	return &proto.Empty{}, nil
 }
 
@@ -42,23 +44,23 @@ func (r *ReviewService) DeleteReview(ctx context.Context, req *proto.DeleteRevie
 }
 
 // GetReview implements proto.ReviewServer.
-func (r *ReviewService) GetReview(ctx context.Context,req *proto.GetReviewRequest) (*proto.ReviewResponse, error) {
+func (r *ReviewService) GetReview(ctx context.Context, req *proto.GetReviewRequest) (*proto.ReviewResponse, error) {
 	var review model.Review
 	if err := r.DB.First(&review, req.ReviewId).Error; err != nil {
 		return nil, err
 	}
 
 	return &proto.ReviewResponse{
-		ReviewId:    	review.ID,
-		RestaurantId:	review.RestaurantId,
-		UserId:      	review.UserId,
-		Rating:      	review.Rating,
-		Content:     	review.Content,
+		ReviewId:     fmt.Sprintf("%d", review.ID),
+		RestaurantId: review.RestaurantId,
+		UserId:       review.UserId,
+		Rating:       review.Rating,
+		Content:      review.Content,
 	}, nil
 }
 
 // GetReviewsByRestaurantId implements proto.ReviewServer.
-func (r *ReviewService) GetReviewsByRestaurantId(ctx context.Context,req *proto.GetReviewsRequest) (*proto.GetReviewsResponse, error) {
+func (r *ReviewService) GetReviewsByRestaurantId(ctx context.Context, req *proto.GetReviewsRequest) (*proto.GetReviewsResponse, error) {
 	var reviews []model.Review
 	if err := r.DB.Where("restaurant_id = ?", req.RestaurantId).Find(&reviews).Error; err != nil {
 		return nil, err
@@ -67,11 +69,11 @@ func (r *ReviewService) GetReviewsByRestaurantId(ctx context.Context,req *proto.
 	response := &proto.GetReviewsResponse{}
 	for _, review := range reviews {
 		response.Reviews = append(response.Reviews, &proto.ReviewResponse{
-			ReviewId:    review.ID,
+			ReviewId:     fmt.Sprintf("%d", review.ID),
 			RestaurantId: review.RestaurantId,
-			UserId:      review.UserId,
-			Rating:      review.Rating,
-			Content:     review.Content,
+			UserId:       review.UserId,
+			Rating:       review.Rating,
+			Content:      review.Content,
 		})
 	}
 
@@ -79,7 +81,7 @@ func (r *ReviewService) GetReviewsByRestaurantId(ctx context.Context,req *proto.
 }
 
 // UpdateReview implements proto.ReviewServer.
-func (r *ReviewService) UpdateReview(ctx context.Context,req *proto.UpdateReviewRequest) (*proto.ReviewResponse, error) {
+func (r *ReviewService) UpdateReview(ctx context.Context, req *proto.UpdateReviewRequest) (*proto.ReviewResponse, error) {
 	var review model.Review
 
 	if err := r.DB.First(&review, req.ReviewId).Error; err != nil {
@@ -91,10 +93,10 @@ func (r *ReviewService) UpdateReview(ctx context.Context,req *proto.UpdateReview
 		return nil, err
 	}
 	return &proto.ReviewResponse{
-		ReviewId:    review.ID,
+		ReviewId:     fmt.Sprintf("%d", review.ID),
 		RestaurantId: review.RestaurantId,
-		UserId:      review.UserId,
-		Rating:      review.Rating,
-		Content:     review.Content,
+		UserId:       review.UserId,
+		Rating:       review.Rating,
+		Content:      review.Content,
 	}, nil
 }
