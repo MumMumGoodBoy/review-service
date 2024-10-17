@@ -28,10 +28,6 @@ func main() {
 
 	db.AutoMigrate(&model.Review{})
 
-	reviewService := service.ReviewService{
-		DB: db,
-	}
-
 	// Connect to RabbitMQ
 	rabbitMQConn, err := amqp091.Dial(os.Getenv("RABBITMQ_URL"))
 	if err != nil {
@@ -44,6 +40,12 @@ func main() {
 	}
 	defer rabbitMQChannel.Close()
 	fmt.Println("Connected to RabbitMQ")
+
+	// service
+	reviewService := service.ReviewService{
+		DB:              db,
+		RabbitMQChannel: rabbitMQChannel,
+	}
 
 	// grpc
 	grpcServer := grpc.NewServer()

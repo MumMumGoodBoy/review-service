@@ -2,10 +2,12 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/MumMumGoodBoy/review-service/internal/model"
 	"github.com/MumMumGoodBoy/review-service/proto"
+	"github.com/rabbitmq/amqp091-go"
 	"gorm.io/gorm"
 )
 
@@ -13,20 +15,52 @@ var _ proto.ReviewServer = (*ReviewService)(nil)
 
 type ReviewService struct {
 	proto.UnimplementedReviewServer
-	DB *gorm.DB
+	DB              *gorm.DB
+	RabbitMQChannel *amqp091.Channel
+}
+
+func (r *ReviewService) publishReviewEvent(data model.ReviewEvent, event string) error {
+	body, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("error marshalling review event: %v", err)
+	}
+
+	err = r.RabbitMQChannel.Publish(
+		"review_topic",
+		event,
+		false,
+		false,
+		amqp091.Publishing{
+			ContentType: "application/json",
+			Body:        body,
+		})
+	if err != nil {
+		return fmt.Errorf("error publishing review event: %v", err)
+	}
+	return nil
 }
 
 // CreateReview implements proto.ReviewServer.
 func (r *ReviewService) CreateReview(ctx context.Context, review *proto.ReviewRequest) (*proto.Empty, error) {
 	userReview := model.Review{
 		RestaurantId: review.RestaurantId,
-		UserId:       review.UserId,
+		UserId:       uint(review.UserId),
 		Rating:       review.Rating,
 		Content:      review.Content,
 	}
 
 	if err := r.DB.Create(&userReview).Error; err != nil {
 		return nil, err
+	}
+
+	event := model.ReviewEvent{
+		Event:        "review.create",
+		Id:           int(userReview.ID),
+		RestaurantId: userReview.RestaurantId,
+		ReviewerId:   int(userReview.UserId),
+	}
+	if err := r.publishReviewEvent(event, "review.create"); err != nil {
+		fmt.Println("Error publishing review event: ", err)
 	}
 
 	return &proto.Empty{}, nil
@@ -53,7 +87,7 @@ func (r *ReviewService) GetReview(ctx context.Context, req *proto.GetReviewReque
 	return &proto.ReviewResponse{
 		ReviewId:     fmt.Sprintf("%d", review.ID),
 		RestaurantId: review.RestaurantId,
-		UserId:       review.UserId,
+		UserId:       int32(review.UserId),
 		Rating:       review.Rating,
 		Content:      review.Content,
 	}, nil
@@ -71,7 +105,7 @@ func (r *ReviewService) GetReviewsByRestaurantId(ctx context.Context, req *proto
 		response.Reviews = append(response.Reviews, &proto.ReviewResponse{
 			ReviewId:     fmt.Sprintf("%d", review.ID),
 			RestaurantId: review.RestaurantId,
-			UserId:       review.UserId,
+			UserId:       int32(review.UserId),
 			Rating:       review.Rating,
 			Content:      review.Content,
 		})
@@ -95,7 +129,7 @@ func (r *ReviewService) UpdateReview(ctx context.Context, req *proto.UpdateRevie
 	return &proto.ReviewResponse{
 		ReviewId:     fmt.Sprintf("%d", review.ID),
 		RestaurantId: review.RestaurantId,
-		UserId:       review.UserId,
+		UserId:       int32(review.UserId),
 		Rating:       review.Rating,
 		Content:      review.Content,
 	}, nil

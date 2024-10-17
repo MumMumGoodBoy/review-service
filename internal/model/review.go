@@ -7,7 +7,7 @@ import (
 type Review struct {
 	gorm.Model
 	RestaurantId string
-	UserId       int32
+	UserId       uint
 	Rating       float32
 	Content      string
 }
