@@ -40,6 +40,27 @@ func (r *ReviewService) publishReviewEvent(data model.ReviewEvent, event string)
 	return nil
 }
 
+func (r *ReviewService) publishFavoriteEvent(data model.FavoriteEvent, event string) error {
+	body, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("error marshalling favorite event: %v", err)
+	}
+
+	err = r.RabbitMQChannel.Publish(
+		"favorite_topic",
+		event,
+		false,
+		false,
+		amqp091.Publishing{
+			ContentType: "application/json",
+			Body:        body,
+		})
+	if err != nil {
+		return fmt.Errorf("error publishing favorite event: %v", err)
+	}
+	return nil
+}
+
 // CreateReview implements proto.ReviewServer.
 func (r *ReviewService) CreateReview(ctx context.Context, review *proto.ReviewRequest) (*proto.Empty, error) {
 	userReview := model.Review{
@@ -170,5 +191,86 @@ func (r *ReviewService) UpdateReview(ctx context.Context, req *proto.UpdateRevie
 		UserId:       int32(review.UserId),
 		Rating:       review.Rating,
 		Content:      review.Content,
+	}, nil
+}
+
+// AddFavoriteFood implements proto.ReviewServer.
+func (r *ReviewService) AddFavoriteFood(ctx context.Context, req *proto.AddFavoriteFoodRequest) (*proto.Empty, error) {
+	userId := req.UserId
+	foodId := req.FoodId
+
+	var existingFavorite model.FavoriteFood
+	if err := r.DB.Where("user_id = ? AND food_id = ?", userId, foodId).First(&existingFavorite).Error; err == nil {
+		return nil, fmt.Errorf("[AddFavoriteFood]: favorite already exists")
+	}
+
+	favorite := model.FavoriteFood{
+		UserId: uint(userId),
+		FoodId: foodId,
+	}
+	if err := r.DB.Create(&favorite).Error; err != nil {
+		return nil, fmt.Errorf("failed to add favorite food: %v", err)
+	}
+
+	// Publish event to RabbitMQ
+	event := model.FavoriteEvent{
+		Event:  "favorite.add",
+		UserId: int(userId),
+		FoodId: foodId,
+	}
+	if err := r.publishFavoriteEvent(event, "favorite.add"); err != nil {
+		fmt.Printf("Error publishing add favorite event: %v", err)
+	}
+
+	return &proto.Empty{}, nil
+}
+
+// RemoveFavoriteFood implements proto.ReviewServer.
+func (r *ReviewService) RemoveFavoriteFood(ctx context.Context, req *proto.RemoveFavoriteFoodRequest) (*proto.Empty, error) {
+	userId := req.UserId
+	foodId := req.FoodId
+
+	var existingFavorite model.FavoriteFood
+	if err := r.DB.Where("user_id = ? AND food_id = ?", userId, foodId).First(&existingFavorite).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("[RemoveFavoriteFood]: favorite not found for user ID [%d] and food ID [%s]", userId, foodId)
+		}
+		return nil, fmt.Errorf("[RemoveFavoriteFood]: error retrieving favorite food: %v", err)
+	}
+
+	if err := r.DB.Delete(&existingFavorite).Error; err != nil {
+		return nil, fmt.Errorf("[RemoveFavoriteFood]: failed to remove favorite food: %v", err)
+	}
+
+	// Publish event to RabbitMQ
+	event := model.FavoriteEvent{
+		Event:  "favorite.remove",
+		UserId: int(userId),
+		FoodId: foodId,
+	}
+	if err := r.publishFavoriteEvent(event, "favorite.remove"); err != nil {
+		fmt.Printf("Warning: failed to publish favorite remove event: %v\n", err)
+	}
+
+	return &proto.Empty{}, nil
+}
+
+// GetFavoriteFoodsByUserId implements proto.ReviewServer.
+func (r *ReviewService) GetFavoriteFoodsByUserId(ctx context.Context, req *proto.GetFavoriteFoodsByUserIDRequest) (*proto.GetFavoriteFoodsByUserIDResponse, error) {
+	userId := req.UserId
+	var favoriteFoods []model.FavoriteFood
+
+	if err := r.DB.Where("user_id = ?", userId).Find(&favoriteFoods).Error; err != nil {
+		return nil, fmt.Errorf("failed to retrieve favorite foods for user ID %d: %v", req.UserId, err)
+	}
+
+	// extract food_id from food
+	var foodIds []string
+	for _, favorite := range favoriteFoods {
+		foodIds = append(foodIds, favorite.FoodId)
+	}
+
+	return &proto.GetFavoriteFoodsByUserIDResponse{
+		FoodIds: foodIds,
 	}, nil
 }

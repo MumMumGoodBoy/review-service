@@ -11,10 +11,10 @@ service Review {
     rpc GetReview(GetReviewRequest) returns (ReviewResponse);
     rpc UpdateReview(UpdateReviewRequest) returns (ReviewResponse);
     rpc DeleteReview(DeleteReviewRequest) returns (Empty);
-    // Favourite
-    rpc AddFavouriteFood(AddFavouriteFoodRequest) returns (Empty);
-    rpc RemoveFavouriteFood(RemoveFavouriteFoodRequest) returns (Empty);
-    rpc GetFavouriteFoodsByUserId(GetFavouriteFoodsByUserIDRequest) returns (GetFavouriteFoodsByUserIDResponse);
+    // Favorite
+    rpc AddFavoriteFood(AddFavoriteFoodRequest) returns (Empty);
+    rpc RemoveFavoriteFood(RemoveFavoriteFoodRequest) returns (Empty);
+    rpc GetFavoriteFoodsByUserId(GetFavoriteFoodsByUserIDRequest) returns (GetFavoriteFoodsByUserIDResponse);
 }
 
 message Empty {}
@@ -58,20 +58,20 @@ message GetReviewsResponse {
     repeated ReviewResponse reviews = 1;
 }
 
-message AddFavouriteFoodRequest {
+message AddFavoriteFoodRequest {
     int32 user_id = 1;
     string food_id = 2;
 }
 
-message RemoveFavouriteFoodRequest {
+message RemoveFavoriteFoodRequest {
     int32 user_id = 1;
     string food_id = 2;    
 }
 
-message GetFavouriteFoodsByUserIDRequest {
+message GetFavoriteFoodsByUserIDRequest {
     int32 user_id = 1;
 }
 
-message GetFavouriteFoodsByUserIDResponse {
-    repeated int32 food_ids = 1;
+message GetFavoriteFoodsByUserIDResponse {
+    repeated string food_ids = 1;
 }
