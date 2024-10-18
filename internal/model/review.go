@@ -12,6 +12,12 @@ type Review struct {
 	Content      string
 }
 
+type FavouriteFood struct {
+	gorm.Model
+	UserId uint
+	FoodId string
+}
+
 type ReviewEvent struct {
 	Event        string  `json:"event"`
 	Id           int     `json:"id"`

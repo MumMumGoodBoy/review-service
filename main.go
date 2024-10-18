@@ -27,6 +27,7 @@ func main() {
 	}
 
 	db.AutoMigrate(&model.Review{})
+	db.AutoMigrate(&model.FavouriteFood{})
 
 	// Connect to RabbitMQ
 	rabbitMQConn, err := amqp091.Dial(os.Getenv("RABBITMQ_URL"))

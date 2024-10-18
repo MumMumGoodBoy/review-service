@@ -5,11 +5,16 @@ import "google/protobuf/timestamp.proto";
 package proto;
 
 service Review {
+    // Review
     rpc CreateReview(ReviewRequest) returns (Empty);
     rpc GetReviewsByRestaurantId(GetReviewsRequest) returns (GetReviewsResponse);
     rpc GetReview(GetReviewRequest) returns (ReviewResponse);
     rpc UpdateReview(UpdateReviewRequest) returns (ReviewResponse);
     rpc DeleteReview(DeleteReviewRequest) returns (Empty);
+    // Favourite
+    rpc AddFavouriteFood(AddFavouriteFoodRequest) returns (Empty);
+    rpc RemoveFavouriteFood(RemoveFavouriteFoodRequest) returns (Empty);
+    rpc GetFavouriteFoodsByUserId(GetFavouriteFoodsByUserIDRequest) returns (GetFavouriteFoodsByUserIDResponse);
 }
 
 message Empty {}
@@ -51,4 +56,22 @@ message ReviewResponse {
 
 message GetReviewsResponse {
     repeated ReviewResponse reviews = 1;
+}
+
+message AddFavouriteFoodRequest {
+    int32 user_id = 1;
+    string food_id = 2;
+}
+
+message RemoveFavouriteFoodRequest {
+    int32 user_id = 1;
+    string food_id = 2;    
+}
+
+message GetFavouriteFoodsByUserIDRequest {
+    int32 user_id = 1;
+}
+
+message GetFavouriteFoodsByUserIDResponse {
+    repeated int32 food_ids = 1;
 }
