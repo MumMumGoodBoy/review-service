@@ -5,18 +5,23 @@ import "google/protobuf/timestamp.proto";
 package proto;
 
 service Review {
+    // Review
     rpc CreateReview(ReviewRequest) returns (Empty);
     rpc GetReviewsByRestaurantId(GetReviewsRequest) returns (GetReviewsResponse);
     rpc GetReview(GetReviewRequest) returns (ReviewResponse);
     rpc UpdateReview(UpdateReviewRequest) returns (ReviewResponse);
     rpc DeleteReview(DeleteReviewRequest) returns (Empty);
+    // Favorite
+    rpc AddFavoriteFood(AddFavoriteFoodRequest) returns (Empty);
+    rpc RemoveFavoriteFood(RemoveFavoriteFoodRequest) returns (Empty);
+    rpc GetFavoriteFoodsByUserId(GetFavoriteFoodsByUserIDRequest) returns (GetFavoriteFoodsByUserIDResponse);
 }
 
 message Empty {}
 
 message ReviewRequest {
     string restaurant_id = 1;
-    string user_id = 2;
+    int32 user_id = 2;
     string content = 3;
     float rating = 4;
     google.protobuf.Timestamp created_at = 5;
@@ -43,7 +48,7 @@ message DeleteReviewRequest {
 message ReviewResponse {
     string review_id = 1;
     string restaurant_id = 2;
-    string user_id = 3;
+    int32 user_id = 3;
     string content = 4;
     float rating = 5;
     google.protobuf.Timestamp created_at = 6;
@@ -51,4 +56,22 @@ message ReviewResponse {
 
 message GetReviewsResponse {
     repeated ReviewResponse reviews = 1;
+}
+
+message AddFavoriteFoodRequest {
+    int32 user_id = 1;
+    string food_id = 2;
+}
+
+message RemoveFavoriteFoodRequest {
+    int32 user_id = 1;
+    string food_id = 2;    
+}
+
+message GetFavoriteFoodsByUserIDRequest {
+    int32 user_id = 1;
+}
+
+message GetFavoriteFoodsByUserIDResponse {
+    repeated string food_ids = 1;
 }
