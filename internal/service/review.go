@@ -58,9 +58,11 @@ func (r *ReviewService) CreateReview(ctx context.Context, review *proto.ReviewRe
 		Id:           int(userReview.ID),
 		RestaurantId: userReview.RestaurantId,
 		ReviewerId:   int(userReview.UserId),
+		Rating:       userReview.Rating,
+		Content:      userReview.Content,
 	}
 	if err := r.publishReviewEvent(event, "review.create"); err != nil {
-		fmt.Println("Error publishing review event: ", err)
+		fmt.Println("Error publishing create review event: ", err)
 	}
 
 	return &proto.Empty{}, nil
@@ -70,8 +72,30 @@ func (r *ReviewService) CreateReview(ctx context.Context, review *proto.ReviewRe
 func (r *ReviewService) DeleteReview(ctx context.Context, req *proto.DeleteReviewRequest) (*proto.Empty, error) {
 	reviewId := req.ReviewId
 
+	// Retrieve the to-be-deleted review
+	var userReview model.Review
+	if err := r.DB.First(&userReview, reviewId).Error; err != nil {
+		// If the review is not found, return an error
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("[DeleteReview]: review not found")
+		}
+		return nil, err
+	}
+
 	if err := r.DB.Delete(&model.Review{}, reviewId).Error; err != nil {
 		return nil, err
+	}
+
+	event := model.ReviewEvent{
+		Event:        "review.delete",
+		Id:           int(userReview.ID),
+		RestaurantId: userReview.RestaurantId,
+		ReviewerId:   int(userReview.UserId),
+		Rating:       userReview.Rating,
+		Content:      userReview.Content,
+	}
+	if err := r.publishReviewEvent(event, "review.create"); err != nil {
+		fmt.Println("Error publishing delete review event: ", err)
 	}
 
 	return &proto.Empty{}, nil
