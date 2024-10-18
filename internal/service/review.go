@@ -94,7 +94,7 @@ func (r *ReviewService) DeleteReview(ctx context.Context, req *proto.DeleteRevie
 		Rating:       userReview.Rating,
 		Content:      userReview.Content,
 	}
-	if err := r.publishReviewEvent(event, "review.create"); err != nil {
+	if err := r.publishReviewEvent(event, "review.delete"); err != nil {
 		fmt.Println("Error publishing delete review event: ", err)
 	}
 
@@ -150,6 +150,20 @@ func (r *ReviewService) UpdateReview(ctx context.Context, req *proto.UpdateRevie
 	if err := r.DB.Save(&review).Error; err != nil {
 		return nil, err
 	}
+
+	// send event to rabbitmq
+	event := model.ReviewEvent{
+		Event:        "review.update",
+		Id:           int(review.ID),
+		RestaurantId: review.RestaurantId,
+		ReviewerId:   int(review.UserId),
+		Rating:       review.Rating,
+		Content:      review.Content,
+	}
+	if err := r.publishReviewEvent(event, "review.update"); err != nil {
+		fmt.Println("Error publishing update review event: ", err)
+	}
+
 	return &proto.ReviewResponse{
 		ReviewId:     fmt.Sprintf("%d", review.ID),
 		RestaurantId: review.RestaurantId,
