@@ -65,17 +65,24 @@ message GetReviewsResponse {
 message AddFavoriteFoodRequest {
     int32 user_id = 1;
     string food_id = 2;
+    string restaurant_id = 3;
 }
 
 message RemoveFavoriteFoodRequest {
     int32 user_id = 1;
-    string food_id = 2;    
+    string food_id = 2; 
+    string restaurant_id = 3;   
 }
 
 message GetFavoriteFoodsByUserIDRequest {
     int32 user_id = 1;
 }
 
+message FavoriteFoodResponse {
+    string food_id = 1;
+    string restaurant_id = 2;
+}
+
 message GetFavoriteFoodsByUserIDResponse {
-    repeated string food_ids = 1;
+    repeated FavoriteFoodResponse favorite_foods = 1;
 }

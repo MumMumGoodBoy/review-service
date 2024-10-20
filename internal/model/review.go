@@ -14,8 +14,9 @@ type Review struct {
 
 type FavoriteFood struct {
 	gorm.Model
-	UserId uint
-	FoodId string
+	UserId       uint
+	FoodId       string
+	RestaurantId string
 }
 
 type ReviewEvent struct {
@@ -28,7 +29,8 @@ type ReviewEvent struct {
 }
 
 type FavoriteEvent struct {
-	Event  string `json:"event"`
-	UserId int    `json:"user_id"`
-	FoodId string `json:"food_id"`
+	Event        string `json:"event"`
+	UserId       int    `json:"user_id"`
+	FoodId       string `json:"food_id"`
+	RestaurantId string `json:"restaurant_id"`
 }

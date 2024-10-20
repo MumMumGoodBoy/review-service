@@ -203,6 +203,11 @@ func (r *ReviewService) UpdateReview(ctx context.Context, req *proto.UpdateRevie
 func (r *ReviewService) AddFavoriteFood(ctx context.Context, req *proto.AddFavoriteFoodRequest) (*proto.Empty, error) {
 	userId := req.UserId
 	foodId := req.FoodId
+	restaurantId := req.RestaurantId
+
+	if restaurantId == "" {
+		return nil, fmt.Errorf("[AddFavoriteFood]: restaurant ID is required")
+	}
 
 	var existingFavorite model.FavoriteFood
 	if err := r.DB.Where("user_id = ? AND food_id = ?", userId, foodId).First(&existingFavorite).Error; err == nil {
@@ -219,9 +224,10 @@ func (r *ReviewService) AddFavoriteFood(ctx context.Context, req *proto.AddFavor
 
 	// Publish event to RabbitMQ
 	event := model.FavoriteEvent{
-		Event:  "favorite.add",
-		UserId: int(userId),
-		FoodId: foodId,
+		Event:        "favorite.add",
+		UserId:       int(userId),
+		FoodId:       foodId,
+		RestaurantId: restaurantId,
 	}
 	if err := r.publishFavoriteEvent(event, "favorite.add"); err != nil {
 		fmt.Printf("Error publishing add favorite event: %v", err)
@@ -249,12 +255,13 @@ func (r *ReviewService) RemoveFavoriteFood(ctx context.Context, req *proto.Remov
 
 	// Publish event to RabbitMQ
 	event := model.FavoriteEvent{
-		Event:  "favorite.remove",
-		UserId: int(userId),
-		FoodId: foodId,
+		Event:        "favorite.remove",
+		UserId:       int(userId),
+		FoodId:       foodId,
+		RestaurantId: existingFavorite.RestaurantId,
 	}
 	if err := r.publishFavoriteEvent(event, "favorite.remove"); err != nil {
-		fmt.Printf("Warning: failed to publish favorite remove event: %v\n", err)
+		fmt.Printf("[RemoveFavoriteFood.publishFavoriteEvent]: failed to publish favorite remove event: %v\n", err)
 	}
 
 	return &proto.Empty{}, nil
@@ -266,16 +273,16 @@ func (r *ReviewService) GetFavoriteFoodsByUserId(ctx context.Context, req *proto
 	var favoriteFoods []model.FavoriteFood
 
 	if err := r.DB.Where("user_id = ?", userId).Find(&favoriteFoods).Error; err != nil {
-		return nil, fmt.Errorf("failed to retrieve favorite foods for user ID %d: %v", req.UserId, err)
+		return nil, fmt.Errorf("[GetFavoriteFoodsByUserId]: failed to retrieve favorite foods for user ID %d: %v", req.UserId, err)
 	}
 
-	// extract food_id from food
-	var foodIds []string
+	response := &proto.GetFavoriteFoodsByUserIDResponse{}
 	for _, favorite := range favoriteFoods {
-		foodIds = append(foodIds, favorite.FoodId)
+		response.FavoriteFoods = append(response.FavoriteFoods, &proto.FavoriteFoodResponse{
+			FoodId:       favorite.FoodId,
+			RestaurantId: favorite.RestaurantId,
+		})
 	}
 
-	return &proto.GetFavoriteFoodsByUserIDResponse{
-		FoodIds: foodIds,
-	}, nil
+	return response, nil
 }
