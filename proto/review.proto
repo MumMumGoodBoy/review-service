@@ -39,10 +39,14 @@ message UpdateReviewRequest {
     string review_id = 1;
     string content = 2;
     float rating = 3;
+    int32 user_id = 4;
+    bool is_admin = 5;
 }
 
 message DeleteReviewRequest {
     string review_id = 1;
+    int32 user_id = 2;
+    bool is_admin = 3;
 }
 
 message ReviewResponse {

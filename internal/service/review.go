@@ -92,7 +92,6 @@ func (r *ReviewService) CreateReview(ctx context.Context, review *proto.ReviewRe
 // DeleteReview implements proto.ReviewServer.
 func (r *ReviewService) DeleteReview(ctx context.Context, req *proto.DeleteReviewRequest) (*proto.Empty, error) {
 	reviewId := req.ReviewId
-
 	// Retrieve the to-be-deleted review
 	var userReview model.Review
 	if err := r.DB.First(&userReview, reviewId).Error; err != nil {
@@ -101,6 +100,9 @@ func (r *ReviewService) DeleteReview(ctx context.Context, req *proto.DeleteRevie
 			return nil, fmt.Errorf("[DeleteReview]: review not found")
 		}
 		return nil, err
+	}
+	if !req.IsAdmin && req.UserId != int32(userReview.UserId) {
+		return nil, fmt.Errorf("[DeleteReview]: not authorize for this review")
 	}
 
 	if err := r.DB.Delete(&model.Review{}, reviewId).Error; err != nil {
@@ -165,6 +167,9 @@ func (r *ReviewService) UpdateReview(ctx context.Context, req *proto.UpdateRevie
 
 	if err := r.DB.First(&review, req.ReviewId).Error; err != nil {
 		return nil, err
+	}
+	if !req.IsAdmin && req.UserId != int32(review.UserId) {
+		return nil, fmt.Errorf("[DeleteReview]: not authorize for this review")
 	}
 	review.Rating = req.Rating
 	review.Content = req.Content
