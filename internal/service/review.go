@@ -62,7 +62,7 @@ func (r *ReviewService) publishFavoriteEvent(data model.FavoriteEvent, event str
 }
 
 // CreateReview implements proto.ReviewServer.
-func (r *ReviewService) CreateReview(ctx context.Context, review *proto.ReviewRequest) (*proto.Empty, error) {
+func (r *ReviewService) CreateReview(ctx context.Context, review *proto.ReviewRequest) (*proto.ReviewResponse, error) {
 	userReview := model.Review{
 		RestaurantId: review.RestaurantId,
 		UserId:       uint(review.UserId),
@@ -73,7 +73,13 @@ func (r *ReviewService) CreateReview(ctx context.Context, review *proto.ReviewRe
 	if err := r.DB.Create(&userReview).Error; err != nil {
 		return nil, err
 	}
-
+	reviewProto := &proto.ReviewResponse{
+		ReviewId:     fmt.Sprintf("%d", userReview.ID),
+		RestaurantId: review.RestaurantId,
+		UserId:       int32(review.UserId),
+		Rating:       review.Rating,
+		Content:      review.Content,
+	}
 	event := model.ReviewEvent{
 		Event:        "review.create",
 		Id:           int(userReview.ID),
@@ -86,7 +92,7 @@ func (r *ReviewService) CreateReview(ctx context.Context, review *proto.ReviewRe
 		fmt.Println("Error publishing create review event: ", err)
 	}
 
-	return &proto.Empty{}, nil
+	return reviewProto, nil
 }
 
 // DeleteReview implements proto.ReviewServer.

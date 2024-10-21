@@ -6,7 +6,7 @@ package proto;
 
 service Review {
     // Review
-    rpc CreateReview(ReviewRequest) returns (Empty);
+    rpc CreateReview(ReviewRequest) returns (ReviewResponse);
     rpc GetReviewsByRestaurantId(GetReviewsRequest) returns (GetReviewsResponse);
     rpc GetReview(GetReviewRequest) returns (ReviewResponse);
     rpc UpdateReview(UpdateReviewRequest) returns (ReviewResponse);
