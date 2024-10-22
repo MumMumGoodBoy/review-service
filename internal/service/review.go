@@ -63,8 +63,16 @@ func (r *ReviewService) publishFavoriteEvent(data model.FavoriteEvent, event str
 
 // CreateReview implements proto.ReviewServer.
 func (r *ReviewService) CreateReview(ctx context.Context, review *proto.ReviewRequest) (*proto.ReviewResponse, error) {
+	if review.FoodId == "" {
+		return nil, fmt.Errorf("error require foodId for review")
+	}
+	if review.RestaurantId == "" {
+		return nil, fmt.Errorf("error require foodId for review")
+	}
+
 	userReview := model.Review{
 		RestaurantId: review.RestaurantId,
+		FoodId:       review.FoodId,
 		UserId:       uint(review.UserId),
 		Rating:       review.Rating,
 		Content:      review.Content,
@@ -76,6 +84,7 @@ func (r *ReviewService) CreateReview(ctx context.Context, review *proto.ReviewRe
 	reviewProto := &proto.ReviewResponse{
 		ReviewId:     fmt.Sprintf("%d", userReview.ID),
 		RestaurantId: review.RestaurantId,
+		FoodId:       review.FoodId,
 		UserId:       int32(review.UserId),
 		Rating:       review.Rating,
 		Content:      review.Content,
@@ -84,6 +93,7 @@ func (r *ReviewService) CreateReview(ctx context.Context, review *proto.ReviewRe
 		Event:        "review.create",
 		Id:           int(userReview.ID),
 		RestaurantId: userReview.RestaurantId,
+		FoodId:       userReview.FoodId,
 		ReviewerId:   int(userReview.UserId),
 		Rating:       userReview.Rating,
 		Content:      userReview.Content,
@@ -119,6 +129,7 @@ func (r *ReviewService) DeleteReview(ctx context.Context, req *proto.DeleteRevie
 		Event:        "review.delete",
 		Id:           int(userReview.ID),
 		RestaurantId: userReview.RestaurantId,
+		FoodId:       userReview.FoodId,
 		ReviewerId:   int(userReview.UserId),
 		Rating:       userReview.Rating,
 		Content:      userReview.Content,
@@ -140,6 +151,7 @@ func (r *ReviewService) GetReview(ctx context.Context, req *proto.GetReviewReque
 	return &proto.ReviewResponse{
 		ReviewId:     fmt.Sprintf("%d", review.ID),
 		RestaurantId: review.RestaurantId,
+		FoodId:       review.FoodId,
 		UserId:       int32(review.UserId),
 		Rating:       review.Rating,
 		Content:      review.Content,
@@ -147,7 +159,7 @@ func (r *ReviewService) GetReview(ctx context.Context, req *proto.GetReviewReque
 }
 
 // GetReviewsByRestaurantId implements proto.ReviewServer.
-func (r *ReviewService) GetReviewsByRestaurantId(ctx context.Context, req *proto.GetReviewsRequest) (*proto.GetReviewsResponse, error) {
+func (r *ReviewService) GetReviewsByRestaurantId(ctx context.Context, req *proto.GetReviewsByRestaurantRequest) (*proto.GetReviewsResponse, error) {
 	var reviews []model.Review
 	if err := r.DB.Where("restaurant_id = ?", req.RestaurantId).Find(&reviews).Error; err != nil {
 		return nil, err
@@ -158,6 +170,29 @@ func (r *ReviewService) GetReviewsByRestaurantId(ctx context.Context, req *proto
 		response.Reviews = append(response.Reviews, &proto.ReviewResponse{
 			ReviewId:     fmt.Sprintf("%d", review.ID),
 			RestaurantId: review.RestaurantId,
+			FoodId:       review.FoodId,
+			UserId:       int32(review.UserId),
+			Rating:       review.Rating,
+			Content:      review.Content,
+		})
+	}
+
+	return response, nil
+}
+
+// GetReviewsByFoodId implements proto.ReviewServer.
+func (r *ReviewService) GetReviewsByFoodId(ctx context.Context, req *proto.GetReviewsByFoodRequest) (*proto.GetReviewsResponse, error) {
+	var reviews []model.Review
+	if err := r.DB.Where("food_id = ?", req.FoodId).Find(&reviews).Error; err != nil {
+		return nil, err
+	}
+
+	response := &proto.GetReviewsResponse{}
+	for _, review := range reviews {
+		response.Reviews = append(response.Reviews, &proto.ReviewResponse{
+			ReviewId:     fmt.Sprintf("%d", review.ID),
+			RestaurantId: review.RestaurantId,
+			FoodId:       review.FoodId,
 			UserId:       int32(review.UserId),
 			Rating:       review.Rating,
 			Content:      review.Content,
@@ -188,6 +223,7 @@ func (r *ReviewService) UpdateReview(ctx context.Context, req *proto.UpdateRevie
 		Event:        "review.update",
 		Id:           int(review.ID),
 		RestaurantId: review.RestaurantId,
+		FoodId:       review.FoodId,
 		ReviewerId:   int(review.UserId),
 		Rating:       review.Rating,
 		Content:      review.Content,

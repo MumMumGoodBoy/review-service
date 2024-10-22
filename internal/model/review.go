@@ -7,6 +7,7 @@ import (
 type Review struct {
 	gorm.Model
 	RestaurantId string
+	FoodId       string
 	UserId       uint
 	Rating       float32
 	Content      string
@@ -24,6 +25,7 @@ type ReviewEvent struct {
 	Id           int     `json:"id"`
 	ReviewerId   int     `json:"reviewer_id"`
 	RestaurantId string  `json:"restaurant_id"`
+	FoodId       string  `json:"food_id"`
 	Rating       float32 `json:"rating"`
 	Content      string  `json:"content"`
 }
